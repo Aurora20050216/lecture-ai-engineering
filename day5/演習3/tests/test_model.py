@@ -7,6 +7,7 @@ import time
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import recall_score
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.compose import ColumnTransformer
@@ -119,6 +120,16 @@ def test_model_accuracy(train_model):
 
     # Titanicデータセットでは0.75以上の精度が一般的に良いとされる
     assert accuracy >= 0.75, f"モデルの精度が低すぎます: {accuracy}"
+
+def test_model_sensitivity(train_model):
+    """モデルの感度を検証"""
+    model, X_test, y_test = train_model
+
+    # 予測と感度計算
+    y_pred = model.predict(X_test)
+    sensitivity = recall_score(y_test, y_pred)
+
+    assert sensitivity >= 0.70, f"モデルの感度が低すぎます: {sensitivity}"
 
 
 def test_model_inference_time(train_model):
