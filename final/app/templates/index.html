@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <title>講義書き起こし修正システム</title>
+    <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+    <div class="container">
+        <h1>講義書き起こし修正システム</h1>
+
+        <label>pptxファイルアップロード:</label><br/>
+        <input type="file" id="pptx_file" /><br/>
+
+        <label>文字起こし(txt)ファイルアップロード:</label><br/>
+        <input type="file" id="transcript_file" /><br/>
+
+        <button onclick="uploadFiles()">アップロード＆処理開始</button>
+
+        <div id="result"></div>
+    </div>
+
+<script>
+async function getPresignedUrl(filename, contentType) {
+    const res = await fetch(`/get_presigned_url?filename=${encodeURIComponent(filename)}&content_type=${encodeURIComponent(contentType)}`);
+    const data = await res.json();
+    if(data.url) return data.url;
+    throw new Error("プリサインドURL取得失敗");
+}
+
+async function uploadFile(file, presignedUrl) {
+    const res = await fetch(presignedUrl, {
+        method: "PUT",
+        headers: {"Content-Type": file.type},
+        body: file
+    });
+    if(!res.ok) throw new Error("アップロード失敗");
+}
+
+async function uploadFiles() {
+    const pptxFile = document.getElementById("pptx_file").files[0];
+    const transcriptFile = document.getElementById("transcript_file").files[0];
+    if(!pptxFile || !transcriptFile) {
+        alert("両方のファイルを選択してください");
+        return;
+    }
+
+    try {
+        const pptxKey = `uploads/${pptxFile.name}`;
+        const transcriptKey = `uploads/${transcriptFile.name}`;
+
+        const pptxUrl = await getPresignedUrl(pptxKey, pptxFile.type);
+        const transcriptUrl = await getPresignedUrl(transcriptKey, transcriptFile.type);
+
+        await uploadFile(pptxFile, pptxUrl);
+        await uploadFile(transcriptFile, transcriptUrl);
+
+        const res = await fetch(`/process_s3`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({pptx_key: pptxKey, transcript_key: transcriptKey})
+        });
+
+        const data = await res.json();
+
+        if(data.download_url){
+            document.getElementById("result").innerHTML = `<a href="${data.download_url}" target="_blank">処理結果ダウンロードはこちら</a>`;
+        } else {
+            alert("処理失敗");
+        }
+    } catch(e) {
+        alert(e.message);
+    }
+}
+</script>
+</body>
+</html>
