@@ -2,51 +2,48 @@
 
 ## 概要
 
-このプロジェクトは、講義の自動書き起こしテキスト（.txt）と講義資料（.pptx）をアップロードし、  
-簡易的にテキストを整形・修正した結果をダウンロード可能にするWebサービスをAWS Lambda上に構築します。  
-
-将来的にはAWS Bedrock上のLLM連携による高度な修正を目指しています。
+このプロジェクトは、講義の自動書き起こしテキスト（.txt）と講義資料（.pptx）をアップロードし、
+AWS Bedrock上のLLM連携によりテキストを整形・修正した結果をダウンロード可能にするWebサービスを構築します。  
 
 ---
 
 ## ディレクトリ構成
 
-cdk/ # AWS CDKアプリケーション
-lambda/ # Lambda関数コード（FastAPIアプリ）
-lambda_layer/ # Lambda Layer用Pythonパッケージ
-data/ # （任意）サンプルデータ置き場
-scripts/ # （任意）補助スクリプト
-utils/ # （任意）共通ユーティリティ
+app/ # アプリケーション
+docs/ # ドキュメント
 
 ---
 
 ## 動作環境
 
 - Python 3.9以上
-- AWS CLI / CDK v2 インストール済み
-- Node.js / npm (CDK依存の可能性あり)
 - AWSアカウント・権限
 
 ---
 
 ## セットアップ・デプロイ手順
 
-1. Lambda Layerの依存パッケージをインストール
+1. 依存パッケージをインストール
 
 ```bash
-cd lambda_layer/python
-pip install -r requirements.txt -t .
-cd ../..
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 ```
 
-2. CDKブートストラップ(初回のみ)
+2. AWSを利用可能にする
 
 ```bash
-cdk bootstrap
+export AWS_ACCESS_KEY_ID="あなたのAWS_ACCESS_KEY_ID"
+export AWS_SECRET_ACCESS_KEY="あなたのAWS_SECRET_ACCESS_KEY"
+export AWS_SESSION_TOKEN="あなたのAWS_SESSION_TOKEN"
 ```
 
-3. CDKデプロイ
+3. 実行
 
 ```bash
-cdk deploy
+uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
+
+4. アクセス
+http://自分のコンピュータのIPアドレス:8000 にアクセスして、pptxファイルとtxtファイルをアップロードしてください。
